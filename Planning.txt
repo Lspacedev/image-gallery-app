@@ -1,0 +1,22 @@
+#Image Gallery App
+
+Problem: Create image app.
+
+Requirements: 
+    Features:
+    Must be able to:
+    1. Take an image.
+    2. View taken images.
+    3. Update image name.
+    4. Delete image.
+    5. Integrate map
+  
+
+
+Solution:
+    Screens:
+        1. SignIn.
+        2. Register.
+        3. Home.
+        4. Recipe.
+        5. Profile
