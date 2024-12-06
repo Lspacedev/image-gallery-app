@@ -18,6 +18,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
+import * as Location from "expo-location";
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
@@ -69,18 +70,44 @@ export default function App() {
   const takePhoto = async () => {
     try {
       if (cameraRef.current) {
-        const photo = await cameraRef.current?.takePictureAsync();
+        const photo = await cameraRef.current?.takePictureAsync({ quality: 1 });
         console.log({ photo });
         if (storagePermission?.status !== "granted") {
           await requestStoragePermission();
         }
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission to access location was denied");
+          return;
+        }
+
+        let location = await Location.getCurrentPositionAsync({});
+
         if (storagePermission?.status === "granted") {
           const asset = await MediaLibrary.createAssetAsync(photo!.uri);
           const album = await MediaLibrary.getAlbumAsync("Image Gallery");
           if (album == null) {
-            await MediaLibrary.createAlbumAsync("Image Gallery", asset, false);
+            const image = await MediaLibrary.createAlbumAsync(
+              "Image Gallery",
+              asset,
+              false
+            );
+            //add metadata to sqlite db
+            const filename = asset.filename;
+            const timeStamp = Date.now();
+            const uri = asset.uri;
           } else {
-            await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+            const image = await MediaLibrary.addAssetsToAlbumAsync(
+              [asset],
+              album,
+              false
+            );
+            console.log({ location });
+
+            //add metadata to sqlite db
+            const filename = asset.filename;
+            const timeStamp = Date.now();
+            const uri = asset.uri;
           }
         } else {
           Alert.alert("Storage permission needed to save image.");
