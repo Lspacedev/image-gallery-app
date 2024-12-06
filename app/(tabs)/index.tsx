@@ -20,14 +20,14 @@ const Photos = () => {
   const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
   const isFocused = useIsFocused();
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    console.log(storagePermission);
-    (async () => {
-      if (storagePermission?.status !== "granted") {
-        await requestStoragePermission();
-      }
-    })();
-  }, []);
+  // useEffect(() => {
+  //   console.log(storagePermission);
+  //   (async () => {
+  //     if (storagePermission?.status !== "granted") {
+  //       await requestStoragePermission();
+  //     }
+  //   })();
+  // }, [storagePermission]);
   // useEffect(() => {
   //   console.log(
   //     "ddd",
@@ -37,25 +37,34 @@ const Photos = () => {
   // }, []);
   useEffect(() => {
     isFocused && getPhotos();
-  }, [isFocused]);
+  }, [isFocused, storagePermission]);
   const getPhotos = async () => {
     setLoading(true);
-
-    let album = await MediaLibrary.getAlbumAsync("Image Gallery");
-    if (album !== null) {
-      const media = await MediaLibrary.getAssetsAsync({
-        album: album,
-        mediaType: MediaLibrary.MediaType.photo,
-        first: 40,
-      });
-      if (media !== null) {
-        const assets = media.assets;
-        setPhotos(assets);
+    if (storagePermission?.status !== "granted") {
+      await requestStoragePermission();
+    } else {
+      let album = await MediaLibrary.getAlbumAsync("Image Gallery");
+      console.log({ album });
+      if (album !== null) {
+        const media = await MediaLibrary.getAssetsAsync({
+          album: album,
+          mediaType: MediaLibrary.MediaType.photo,
+          first: 40,
+        });
+        if (media !== null) {
+          const assets = media.assets;
+          setPhotos(assets);
+          setLoading(false);
+        }
+      } else {
+        setPhotos([]);
         setLoading(false);
       }
     }
   };
+
   if (loading) return <ActivityIndicator />;
+  console.log({ photos }, photos.length > 0);
   return (
     <View style={styles.container}>
       {photos.length > 0 ? (
@@ -69,7 +78,9 @@ const Photos = () => {
           }}
         />
       ) : (
-        <Text style={{ textAlign: "center", color: "#385747" }}>
+        <Text
+          style={{ textAlign: "center", color: "white", alignItems: "center" }}
+        >
           Gallery is empty
         </Text>
       )}
@@ -79,6 +90,7 @@ const Photos = () => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: "black",
   },
 });

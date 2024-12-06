@@ -14,6 +14,9 @@ import { useState, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import * as MediaLibrary from "expo-media-library";
+import PhotoHeader from "@/components/PhotoHeader";
+
+import AnimatedImage from "@/components/AnimatedImage";
 
 export default function PhotoScreen() {
   const { id } = useLocalSearchParams();
@@ -40,65 +43,22 @@ export default function PhotoScreen() {
       }
     }
   };
-  const deleteRecipe = async () => {
-    setOpenMenu(false);
-    router.push("/");
-  };
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
     >
-      <Modal
-        style={styles.menuModal}
-        animationType="fade"
-        transparent={true}
-        visible={openMenu}
-        onRequestClose={() => {
-          setOpenMenu(false);
-        }}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setOpenMenu(false);
-          }}
-        >
-          <View style={{ backgroundColor: "transparent", flex: 1 }}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.menu}>
-                <Text
-                  onPress={() => {
-                    setOpenMenu(false);
-                  }}
-                  style={{
-                    padding: 0,
-                    margin: 0,
-                    textAlign: "right",
-                  }}
-                >
-                  <EvilIcons name="close" size={24} color="black" />
-                </Text>
-
-                <Pressable
-                  style={styles.menuItem}
-                  onPress={() => deleteRecipe()}
-                >
-                  <MaterialIcons name="delete" size={24} />
-                  <Text>Delete</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-      <Image source={{ uri: photo?.uri }} style={{ flex: 1 }} />
+      <PhotoHeader assetId={photo?.id ?? ""} albumId={photo?.albumId ?? ""} />
+      <AnimatedImage uri={photo?.uri} />
+      {/* <Image source={{ uri: photo?.uri }} style={{ flex: 1 }} /> */}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    backgroundColor: "black",
+  },
   nav: {
     height: 200,
     backgroundColor: "transparent",
