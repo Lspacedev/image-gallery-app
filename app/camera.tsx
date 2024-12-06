@@ -91,7 +91,7 @@ export default function App() {
     }
   };
   const goToPhotos = () => {
-    router.push("/(tabs)");
+    router.back();
   };
   return (
     <View style={styles.container}>

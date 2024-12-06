@@ -9,15 +9,17 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  NativeSyntheticEvent,
-  TextInputChangeEventData,
+  ActivityIndicator,
 } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import * as MediaLibrary from "expo-media-library";
-import PhotoCard from "@/components/PhototCard";
+import PhotoCard from "@/components/PhotoCard";
 const Photos = () => {
   const [storagePermission, requestStoragePermission] =
     MediaLibrary.usePermissions();
   const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
+  const isFocused = useIsFocused();
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     console.log(storagePermission);
     (async () => {
@@ -26,12 +28,20 @@ const Photos = () => {
       }
     })();
   }, []);
+  // useEffect(() => {
+  //   console.log(
+  //     "ddd",
+  //     storagePermission && storagePermission.status === "granted"
+  //   );
+  //   getPhotos();
+  // }, []);
   useEffect(() => {
-    getPhotos();
-  }, []);
+    isFocused && getPhotos();
+  }, [isFocused]);
   const getPhotos = async () => {
-    let album = await MediaLibrary.getAlbumAsync("Image Gallery");
+    setLoading(true);
 
+    let album = await MediaLibrary.getAlbumAsync("Image Gallery");
     if (album !== null) {
       const media = await MediaLibrary.getAssetsAsync({
         album: album,
@@ -41,19 +51,19 @@ const Photos = () => {
       if (media !== null) {
         const assets = media.assets;
         setPhotos(assets);
+        setLoading(false);
       }
     }
   };
+  if (loading) return <ActivityIndicator />;
   return (
     <View style={styles.container}>
-      {photos?.length > 0 ? (
+      {photos.length > 0 ? (
         <FlatList
+          contentContainerStyle={{ padding: 0 }}
           data={photos}
-          numColumns={2}
-          columnWrapperStyle={{
-            gap: 0,
-            justifyContent: "space-around",
-          }}
+          numColumns={3}
+          columnWrapperStyle={{ gap: 2, marginVertical: 2 }}
           renderItem={({ item }) => {
             return <PhotoCard photo={item} />;
           }}
@@ -68,6 +78,8 @@ const Photos = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    backgroundColor: "black",
+  },
 });
 export default Photos;

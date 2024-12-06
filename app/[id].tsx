@@ -17,7 +17,7 @@ import * as MediaLibrary from "expo-media-library";
 
 export default function PhotoScreen() {
   const { id } = useLocalSearchParams();
-  const [photo, setPhoto] = useState();
+  const [photo, setPhoto] = useState<MediaLibrary.Asset>();
   const [openMenu, setOpenMenu] = useState(false);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export default function PhotoScreen() {
         const assets = media.assets;
         const [asset] = assets.filter((photo) => photo.id === id);
         console.log({ asset });
+        setPhoto(asset);
       }
     }
   };
@@ -91,14 +92,13 @@ export default function PhotoScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+      <Image source={{ uri: photo?.uri }} style={{ flex: 1 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "red",
-  },
+  container: {},
   nav: {
     height: 200,
     backgroundColor: "transparent",
