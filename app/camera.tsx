@@ -20,6 +20,8 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { router } from "expo-router";
 import * as Location from "expo-location";
 
+import { initialiseDb, insertData, readData } from "@/db/SQLiteFunctions";
+
 export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
@@ -28,7 +30,11 @@ export default function App() {
   const cameraRef = useRef<CameraView>(null);
   const [pictureSizes, setPictureSizes] = useState<string[]>([]);
   const [selectedSize, setSelectedSize] = useState(undefined);
-
+  useEffect(() => {
+    (async () => {
+      await initialiseDb();
+    })();
+  }, []);
   useEffect(() => {
     async function getSizes() {
       console.log("hi!");
@@ -82,7 +88,6 @@ export default function App() {
         }
 
         let location = await Location.getCurrentPositionAsync({});
-
         if (storagePermission?.status === "granted") {
           const asset = await MediaLibrary.createAssetAsync(photo!.uri);
           const album = await MediaLibrary.getAlbumAsync("Image Gallery");
@@ -102,12 +107,20 @@ export default function App() {
               album,
               false
             );
-            console.log({ location });
-
             //add metadata to sqlite db
+            const id = Number(asset.id) + 1;
             const filename = asset.filename;
             const timeStamp = Date.now();
             const uri = asset.uri;
+            const insertRes = await insertData(
+              id,
+              filename,
+              uri,
+              timeStamp,
+              location.coords.latitude,
+              location.coords.longitude
+            );
+            const read = await readData(asset.id);
           }
         } else {
           Alert.alert("Storage permission needed to save image.");

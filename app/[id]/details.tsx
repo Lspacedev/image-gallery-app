@@ -11,52 +11,53 @@ import {
 } from "react-native";
 
 import { useState, useEffect } from "react";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import EvilIcons from "@expo/vector-icons/EvilIcons";
 import * as MediaLibrary from "expo-media-library";
 import PhotoHeader from "@/components/PhotoHeader";
-
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
 import AnimatedImage from "@/components/AnimatedImage";
+import { readData } from "@/db/SQLiteFunctions";
 
 export default function PhotoScreen() {
   const { id } = useLocalSearchParams();
-  const [photo, setPhoto] = useState<MediaLibrary.Asset>();
-  const [openMenu, setOpenMenu] = useState(false);
+  const [metaData, setMetaData] = useState<any>({});
 
   useEffect(() => {
-    console.log({ id });
-    getPhoto();
+    getMetaData();
   }, [id]);
-  const getPhoto = async () => {
-    let album = await MediaLibrary.getAlbumAsync("Image Gallery");
-
-    if (album !== null) {
-      const media = await MediaLibrary.getAssetsAsync({
-        album: album,
-        mediaType: MediaLibrary.MediaType.photo,
-        first: 40,
-      });
-      if (media !== null) {
-        const assets = media.assets;
-        const [asset] = assets.filter((photo) => photo.id === id);
-        setPhoto(asset);
-      }
-    }
+  const getMetaData = async () => {
+    const data = await readData(id);
+    setMetaData(data[0]);
   };
+  console.log({ metaData });
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
     >
-      <PhotoHeader assetId={photo?.id ?? ""} albumId={photo?.albumId ?? ""} />
-      <AnimatedImage uri={photo?.uri} />
+      <View style={styles.view}>
+        <AntDesign name="file1" size={24} color="black" />
+
+        <Text style={styles.text}>{metaData.filename}</Text>
+      </View>
+
+      <View style={styles.view}>
+        <Feather name="calendar" size={24} color="black" />
+        <Text style={styles.text}>{metaData.timestamp}</Text>
+      </View>
+      <View style={styles.view}>
+        <Feather name="folder" size={24} color="black" />
+        <Text style={styles.text}>{metaData.uri}</Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "black",
+    backgroundColor: "grey",
+    paddingHorizontal: 25,
+    paddingVertical: 25,
   },
   nav: {
     height: 200,
@@ -134,5 +135,13 @@ const styles = StyleSheet.create({
     gap: 15,
     alignItems: "center",
     padding: 5,
+  },
+  view: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 25,
+  },
+  text: {
+    color: "white",
   },
 });

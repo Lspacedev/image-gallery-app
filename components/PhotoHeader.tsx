@@ -14,7 +14,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
@@ -76,6 +76,14 @@ const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
                   <MaterialIcons name="delete" size={24} />
                   <Text>Delete</Text>
                 </Pressable>
+                <Link
+                  href={{
+                    pathname: "/[id]/details",
+                    params: { id: assetId },
+                  }}
+                >
+                  <Text>Details</Text>
+                </Link>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -84,6 +92,9 @@ const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
       <Pressable onPress={goToBack}>
         <Ionicons name="arrow-back" size={24} color="white" />
       </Pressable>
+      <Link href={{ pathname: "../[id]/map", params: { id: assetId } }}>
+        <Feather name="map-pin" size={24} color="white" />
+      </Link>
       <Pressable
         style={styles.options}
         onPress={() => {

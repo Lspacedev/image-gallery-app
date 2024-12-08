@@ -14,16 +14,17 @@ import * as MediaLibrary from "expo-media-library";
 
 type PhotoProps = {
   photo: MediaLibrary.Asset;
+  addAssetsToMove: (assetId: string) => void;
 };
 
-const PhotoCard: React.FC<PhotoProps> = ({ photo }) => {
-  console.log({ photo });
+const PhotoCard: React.FC<PhotoProps> = ({ photo, addAssetsToMove }) => {
   return (
     <Link
       href={{
         pathname: "../[id]",
         params: { id: photo.id },
       }}
+      onLongPress={() => addAssetsToMove(photo.id)}
     >
       <View style={styles.container}>
         <View style={styles.imgContainer}>
