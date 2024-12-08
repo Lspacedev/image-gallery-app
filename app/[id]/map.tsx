@@ -1,46 +1,50 @@
 import React from "react";
 import { useLocalSearchParams, Link, router } from "expo-router";
 import { useState, useEffect } from "react";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { readData } from "@/db/SQLiteFunctions";
-
+import { Platform } from "react-native";
 export default function Map() {
   const { id } = useLocalSearchParams();
   const [metaData, setMetaData] = useState<any>({});
+  const [coords, setCoords] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     getMetaData();
   }, [id]);
   const getMetaData = async () => {
-    const data = await readData(id);
+    const [data] = await readData(id);
+    setCoords({ latitude: data.lat, longitude: data.long });
     setLoading(false);
-    setMetaData(data[0]);
   };
-  console.log(loading, metaData);
+
   if (loading) return <ActivityIndicator />;
 
   return (
     <View style={styles.container}>
-      {/* <MapView
+      <MapView
         style={styles.map}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude: metaData.lat,
-          longitude: metaData.long,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: 0.003,
+          longitudeDelta: 0.003,
         }}
       >
         <Marker
           coordinate={{
-            latitude: metaData.lat,
-            longitude: metaData.long,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
           }}
           title="My Location"
           description="This is a marker in San Francisco"
         />
-      </MapView> */}
-      <MapView style={styles.map} />
+      </MapView>
     </View>
   );
 }
