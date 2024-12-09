@@ -30,6 +30,7 @@ export default function PhotoScreen() {
     setMetaData(data[0]);
   };
   console.log({ metaData });
+  const date = new Date(metaData.timestamp * 1000) ?? "";
   return (
     <ScrollView
       style={styles.container}
@@ -43,7 +44,7 @@ export default function PhotoScreen() {
 
       <View style={styles.view}>
         <Feather name="calendar" size={24} color="black" />
-        <Text style={styles.text}>{metaData.timestamp}</Text>
+        <Text style={styles.text}>{date.toString()}</Text>
       </View>
       <View style={styles.view}>
         <Feather name="folder" size={24} color="black" />

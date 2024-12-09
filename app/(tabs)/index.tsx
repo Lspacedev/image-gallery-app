@@ -31,9 +31,11 @@ const Photos = () => {
   const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
   const isFocused = useIsFocused();
   const [loading, setLoading] = useState(false);
-  const [assetsToMove, setAssetsToMove] = useState<string[]>([]);
+  const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.AssetRef[]>([]);
   const [openMenu, setOpenMenu] = useState(false);
   const [openForm, setOpenForm] = useState(false);
+  const [show, setShow] = useState(false);
+
   const [name, setName] = useState("");
 
   // useEffect(() => {
@@ -54,6 +56,13 @@ const Photos = () => {
   useEffect(() => {
     isFocused && getPhotos();
   }, [isFocused, storagePermission]);
+  useEffect(() => {
+    if (assetsToMove.length > 0) {
+      setShow(true);
+    } else {
+      setShow(false);
+    }
+  }, [assetsToMove]);
   const getPhotos = async () => {
     setLoading(true);
     if (storagePermission?.status !== "granted") {
@@ -85,36 +94,43 @@ const Photos = () => {
     if (foundAsset.length > 0) {
       const filteredArr = assets.filter((id) => id !== assetId);
       setAssetsToMove(filteredArr);
-      return Alert.alert("error occured");
     } else {
-      console.log(assetId);
-
       setAssetsToMove((prev) => [...prev, assetId]);
     }
   };
   const moveAssets = async () => {
-    // let assets: MediaLibrary.Asset[] = [];
-    // assetsToMove.map((id) => {
-    //   const [asset] = photos.filter((photo) => photo.id === id);
-    //   assets.push(asset);
-    // });
-    // const album = await MediaLibrary.getAlbumAsync(name);
-    // if (album == null) {
-    //   const image = await MediaLibrary.createAlbumAsync(
-    //     name,
-    //     asset,
-    //     false
-    //   );
-    // const moved = await MediaLibrary.addAssetsToAlbumAsync(
-    //   assets,
-    //   album,
-    //   false
-    // );
+    let assets: MediaLibrary.Asset[] =
+      assetsToMove.map((id) => {
+        const [asset] = photos.filter((photo) => photo.id === id);
+        return asset;
+      }) || [];
+    const album = await MediaLibrary.getAlbumAsync(name);
+    if (album == null && assets.length > 0) {
+      const asset = await MediaLibrary.createAssetAsync(assets[0].uri);
+
+      const create = await MediaLibrary.createAlbumAsync(name, asset, false);
+      //move the rest of the images
+      const newAlbum = await MediaLibrary.getAlbumAsync(name);
+
+      const moved = await MediaLibrary.addAssetsToAlbumAsync(
+        assets.slice(1),
+        newAlbum,
+        false
+      );
+      setOpenForm(false);
+    } else {
+      const moved = await MediaLibrary.addAssetsToAlbumAsync(
+        assets,
+        album,
+        false
+      );
+      setOpenForm(false);
+    }
   };
   if (loading) return <ActivityIndicator />;
   return (
     <View style={styles.container}>
-      {/* <Modal
+      <Modal
         style={styles.menuModal}
         animationType="fade"
         transparent={true}
@@ -146,7 +162,10 @@ const Photos = () => {
 
                 <Pressable
                   style={styles.menuItem}
-                  onPress={() => setOpenMenu(true)}
+                  onPress={() => {
+                    setOpenMenu(false);
+                    setOpenForm(true);
+                  }}
                 >
                   <Text>Move to folder</Text>
                 </Pressable>
@@ -155,40 +174,57 @@ const Photos = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-      <Modal
-        style={styles.modal}
+      {/* <Modal
         animationType="slide"
         transparent={true}
         visible={openForm}
-      >
-        <TextInput
-          style={styles.input}
-          placeholder="Enter folder name"
-          placeholderTextColor={"#717171"}
-          onChangeText={(text) => setName(text)}
-        />
-
-        <Pressable style={styles.button} onPress={() => moveAssets()}>
-          <Text style={styles.buttonText}>Submit</Text>
-        </Pressable>
-      </Modal>
-      <Pressable
-        style={styles.options}
-        onPress={() => {
-          setOpenMenu(true);
+        onRequestClose={() => {
+          setOpenForm(false);
         }}
+        style={styles.menuModal}
       >
-        <SimpleLineIcons
-          name="options-vertical"
-          size={24}
-          style={{
-            color: "whitesmoke",
-            backgroundColor: "black",
-            padding: 5,
-            borderRadius: 50,
+        <TouchableWithoutFeedback
+          onPress={() => {
+            setOpenForm(false);
           }}
-        />
-      </Pressable> */}
+        >
+          <View style={{ backgroundColor: "transparent", flex: 1 }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.folderName}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter folder name"
+                  placeholderTextColor={"#717171"}
+                  onChangeText={(text) => setName(text)}
+                />
+
+                <Pressable style={styles.button} onPress={() => moveAssets()}>
+                  <Text style={styles.buttonText}>Submit</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal> */}
+      {/* {show && (
+        <Pressable
+          style={styles.options}
+          onPress={() => {
+            setOpenMenu(true);
+          }}
+        >
+          <SimpleLineIcons
+            name="options-vertical"
+            size={24}
+            style={{
+              color: "whitesmoke",
+              backgroundColor: "black",
+              padding: 5,
+              borderRadius: 50,
+            }}
+          />
+        </Pressable>
+      )} */}
       {photos.length > 0 ? (
         <FlatList
           contentContainerStyle={{ padding: 0 }}
@@ -196,7 +232,13 @@ const Photos = () => {
           numColumns={3}
           columnWrapperStyle={{ gap: 2, marginVertical: 2 }}
           renderItem={({ item }) => {
-            return <PhotoCard photo={item} addAssetsToMove={addAssetsToMove} />;
+            return (
+              <PhotoCard
+                photo={item}
+                addAssetsToMove={addAssetsToMove}
+                selected={assetsToMove}
+              />
+            );
           }}
         />
       ) : (
@@ -214,6 +256,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
+    padding: 5,
   },
   menuModal: {
     flex: 1,
@@ -240,9 +283,12 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   options: {},
-  modal: {
-    flex: 1,
+  folderName: {
     backgroundColor: "blue",
+    width: 200,
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   input: {
     borderRadius: 5,

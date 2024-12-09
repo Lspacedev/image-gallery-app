@@ -77,7 +77,6 @@ export default function App() {
     try {
       if (cameraRef.current) {
         const photo = await cameraRef.current?.takePictureAsync({ quality: 1 });
-        console.log({ photo });
         if (storagePermission?.status !== "granted") {
           await requestStoragePermission();
         }
@@ -112,6 +111,14 @@ export default function App() {
             const filename = asset.filename;
             const timeStamp = Date.now();
             const uri = asset.uri;
+            console.log({
+              id,
+              filename,
+              uri,
+              timeStamp,
+              lat: location.coords.latitude,
+              long: location.coords.longitude,
+            });
             const insertRes = await insertData(
               id,
               filename,
@@ -120,7 +127,9 @@ export default function App() {
               location.coords.latitude,
               location.coords.longitude
             );
+
             const read = await readData(asset.id);
+            console.log({ read });
           }
         } else {
           Alert.alert("Storage permission needed to save image.");

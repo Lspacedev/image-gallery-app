@@ -1,7 +1,7 @@
 import * as SQLite from "expo-sqlite";
 
 export const initialiseDb = async () => {
-  const db = await SQLite.openDatabaseAsync("ImageGalleryApp", {
+  const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
     useNewConnection: true,
   });
 
@@ -20,7 +20,7 @@ export const insertData = async (
   lat,
   long
 ) => {
-  const db = await SQLite.openDatabaseAsync("ImageGalleryApp", {
+  const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
     useNewConnection: true,
   });
 
@@ -36,7 +36,7 @@ export const insertData = async (
 };
 
 export const deleteData = async (id) => {
-  const db = await SQLite.openDatabaseAsync("ImageGalleryApp", {
+  const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
     useNewConnection: true,
   });
 
@@ -48,7 +48,7 @@ export const deleteData = async (id) => {
 };
 
 export const readData = async (id) => {
-  const db = await SQLite.openDatabaseAsync("ImageGalleryApp", {
+  const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
     useNewConnection: true,
   });
 
