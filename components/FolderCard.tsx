@@ -34,7 +34,6 @@ const FolderCard: React.FC<FolderProps> = ({
       params: { folder: folder.name },
     });
   };
-  console.log({ isAssetMove });
   return (
     // <Link
     //   href={{

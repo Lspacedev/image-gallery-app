@@ -58,14 +58,19 @@ export const readData = async (id) => {
   return res;
 };
 
-export const updateId = async (id, newId) => {
-  const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
-    useNewConnection: true,
-  });
+export const updateId = async (newId, filename) => {
+  try {
+    const db = await SQLite.openDatabaseAsync("ImageGalleryAppToo", {
+      useNewConnection: true,
+    });
 
-  const res = await db.runAsync(
-    "UPDATE images SET fileId = ? WHERE fileId = ?",
-    [id, newId]
-  );
-  return res;
+    const res = await db.runAsync(
+      "UPDATE images SET fileId = ? WHERE filename = ?",
+      [newId, filename]
+    );
+
+    return res;
+  } catch (error) {
+    console.log(error);
+  }
 };

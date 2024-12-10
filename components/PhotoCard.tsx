@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import {
   View,
   Text,
@@ -9,19 +9,23 @@ import {
   StyleSheet,
 } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import Feather from "@expo/vector-icons/Feather";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as MediaLibrary from "expo-media-library";
 
 type PhotoProps = {
   photo: MediaLibrary.Asset;
   addAssetsToMove: (assetId: string) => void;
   selected: MediaLibrary.AssetRef[];
+  selector: boolean;
+  setSelector: (bool: boolean) => void;
 };
 
 const PhotoCard: React.FC<PhotoProps> = ({
   photo,
   addAssetsToMove,
   selected,
+  selector,
+  setSelector,
 }) => {
   const [isSelected, setIsSelected] = useState(false);
   useEffect(() => {
@@ -33,26 +37,60 @@ const PhotoCard: React.FC<PhotoProps> = ({
       setIsSelected(false);
     }
   }, [selected]);
+  const goToImage = () => {
+    router.push({
+      pathname: "../[id]",
+      params: { id: photo.id },
+    });
+  };
+  console.log({ selector });
   return (
-    <Link
-      href={{
-        pathname: "../[id]",
-        params: { id: photo.id },
+    // <Link
+    //   href={{
+    //     pathname: "../[id]",
+    //     params: { id: photo.id },
+    //   }}
+    //   onLongPress={() => addAssetsToMove(photo.id)}
+    // >
+    //   <View style={[styles.container]}>
+    //     <View style={styles.imgContainer}>
+    //       <Image
+    //         source={{ uri: photo.uri }}
+    //         style={[
+    //           styles.img,
+    //           isSelected! && { borderWidth: 6, borderColor: "#90D6FF" },
+    //         ]}
+    //       />
+    //     </View>
+    //   </View>
+    // </Link>
+    <Pressable
+      style={[styles.container]}
+      onPress={selector ? () => addAssetsToMove(photo.id) : () => goToImage()}
+      onLongPress={() => {
+        setSelector(true);
+        addAssetsToMove(photo.id);
       }}
-      onLongPress={() => addAssetsToMove(photo.id)}
     >
-      <View style={[styles.container]}>
-        <View style={styles.imgContainer}>
-          <Image
-            source={{ uri: photo.uri }}
-            style={[
-              styles.img,
-              isSelected! && { borderWidth: 6, borderColor: "#90D6FF" },
-            ]}
-          />
+      {selector && (
+        <View>
+          {isSelected ? (
+            <MaterialIcons name="radio-button-checked" style={styles.radio} />
+          ) : (
+            <MaterialIcons name="radio-button-unchecked" style={styles.radio} />
+          )}
         </View>
+      )}
+      <View style={styles.imgContainer}>
+        <Image
+          source={{ uri: photo.uri }}
+          style={[
+            styles.img,
+            isSelected! && { borderWidth: 6, borderColor: "#90D6FF" },
+          ]}
+        />
       </View>
-    </Link>
+    </Pressable>
   );
 };
 export default PhotoCard;
@@ -61,20 +99,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: Dimensions.get("window").width / 3,
-    height: 180,
+    height: Dimensions.get("window").width / 3,
+    position: "relative",
   },
   selected: {
     flex: 1,
-    width: Dimensions.get("window").width / 3,
-    height: 180,
-    borderWidth: 1,
+    width: Dimensions.get("window").width / 3 - 5,
+    height: Dimensions.get("window").width / 3 - 5,
+    borderWidth: 5,
     borderColor: "lightBlue",
   },
   imgContainer: {
     width: Dimensions.get("window").width / 3,
-    height: 180,
+    height: Dimensions.get("window").width / 3,
   },
   img: {
     flex: 1,
+  },
+  radio: {
+    flex: 1,
+    position: "absolute",
+    zIndex: 1,
+    fontSize: 25,
+    color: "white",
   },
 });

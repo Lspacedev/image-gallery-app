@@ -25,6 +25,7 @@ const IndexHeader = () => {
 
 const styles = StyleSheet.create({
   container: {
+    position: "relative",
     paddingTop: StatusBar.currentHeight,
     height: 80,
     flexDirection: "row",

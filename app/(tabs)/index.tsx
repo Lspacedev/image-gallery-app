@@ -13,10 +13,9 @@ import {
   Alert,
   SafeAreaView,
   StatusBar,
-  Image,
   Modal,
   TouchableWithoutFeedback,
-  TextInput,
+  Dimensions,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
@@ -37,6 +36,7 @@ const Photos = () => {
   const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.AssetRef[]>([]);
   const [openMenu, setOpenMenu] = useState(false);
   const [show, setShow] = useState(false);
+  const [selector, setSelector] = useState(false);
 
   const [name, setName] = useState("");
   const storeData = async (key: string, value: any) => {
@@ -47,24 +47,31 @@ const Photos = () => {
     }
   };
   useEffect(() => {
-    getData();
-  }, []);
+    isFocused && getData();
+  }, [isFocused]);
   useEffect(() => {
     (async () => {
-      let assets: MediaLibrary.Asset[] =
-        assetsToMove.map((id) => {
-          const [asset] = photos.filter((photo) => photo.id === id);
-          return asset;
-        }) || [];
+      if (assetsToMove.length > 0) {
+        let assets: MediaLibrary.Asset[] =
+          assetsToMove.map((id) => {
+            const [asset] = photos.filter((photo) => photo.id === id);
+            return asset;
+          }) || [];
 
-      await storeData("assetsTo", JSON.stringify(assets));
+        await storeData("assetsTo", JSON.stringify(assets));
+      } else {
+        console.log("stop now");
+
+        await storeData("assetsTo", JSON.stringify([]));
+        setSelector(false);
+      }
     })();
   }, [assetsToMove]);
   const getData = async () => {
     try {
       const data = await AsyncStorage.getItem("assetsTo");
       console.log("index", { data });
-      if (data === null) {
+      if (data === null || JSON.parse(data).length === 0) {
         setAssetsToMove([]);
         //setShow(false);
       }
@@ -123,6 +130,7 @@ const Photos = () => {
   };
   const addAssetsToMove = (assetId: string) => {
     const assets = [...assetsToMove];
+
     const foundAsset = assets.filter((id) => id === assetId);
     if (foundAsset.length > 0) {
       const filteredArr = assets.filter((id) => id !== assetId);
@@ -185,24 +193,26 @@ const Photos = () => {
       </Modal>
 
       {show && (
-        <Pressable
-          style={styles.options}
-          onPress={() => {
-            setOpenMenu(true);
-          }}
-        >
-          <SimpleLineIcons
-            name="options-vertical"
-            size={24}
-            style={{
-              color: "whitesmoke",
-              backgroundColor: "black",
-              padding: 5,
-              borderRadius: 50,
+        <View style={styles.options}>
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => {
+              setOpenMenu(true);
             }}
-          />
-        </Pressable>
+          >
+            <SimpleLineIcons
+              name="options-vertical"
+              size={24}
+              style={{
+                color: "whitesmoke",
+                padding: 5,
+                borderRadius: 50,
+              }}
+            />
+          </Pressable>
+        </View>
       )}
+
       {photos.length > 0 ? (
         <FlatList
           contentContainerStyle={{ padding: 0 }}
@@ -215,6 +225,8 @@ const Photos = () => {
                 photo={item}
                 addAssetsToMove={addAssetsToMove}
                 selected={assetsToMove}
+                selector={selector}
+                setSelector={(bool) => setSelector(bool)}
               />
             );
           }}
@@ -260,7 +272,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 5,
   },
-  options: {},
+  options: {
+    height: 50,
+    backgroundColor: "grey",
+    zIndex: 1,
+  },
   folderName: {
     backgroundColor: "blue",
     width: 200,

@@ -28,6 +28,7 @@ import FileSystem from "expo-file-system";
 import RNFS from "react-native-fs";
 import FolderCard from "@/components/FolderCard";
 import { updateId } from "@/db/SQLiteFunctions";
+import { useIsFocused } from "@react-navigation/native";
 
 type Props = {};
 type folderType = {
@@ -42,28 +43,34 @@ const Folders = (props: Props) => {
   const [name, setName] = useState("");
   const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.Asset[]>([]);
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
-  const [directories, setDirectories] = useState([]);
+  const isFocused = useIsFocused();
   const [isAssetMove, setIsAssetMove] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getData();
-    getAlbum();
+    isFocused && getData();
+    //getAlbum();
     getAlbums();
-  }, []);
+  }, [isFocused]);
   const getData = async () => {
     try {
       const data = await AsyncStorage.getItem("assetsTo");
-      console.log("data is", { data });
+      console.log({ data });
       if (data !== null) {
         const arr = JSON.parse(data);
         setAssetsToMove(arr);
-
+        console.log({ arr });
         if (arr.length === 0) {
+          console.log("empty");
           setIsAssetMove(false);
+          setLoading(false);
         } else {
+          console.log("not empty");
+
           setIsAssetMove(true);
+          setLoading(false);
         }
-        return data;
+        // return data;
       }
     } catch (error) {
       console.error("Error fetching data", error);
@@ -140,22 +147,22 @@ const Folders = (props: Props) => {
           selectedAlbum,
           false
         );
-        // const media = await MediaLibrary.getAssetsAsync({
-        //   album: selectedAlbum,
-        //   mediaType: MediaLibrary.MediaType.photo,
-        //   first: 40,
-        // });
-        // if (media !== null) {
-        //   const assets = media.assets;
-        //   //update assets metadata
-        //   assets.map((newAsset) => {
-        //     assetsToMove.map(async (asset) => {
-        //       if (asset.filename === newAsset.filename) {
-        //         await updateId(asset.id, newAsset.id);
-        //       }
-        //     });
-        //   });
-        // }
+        const media = await MediaLibrary.getAssetsAsync({
+          album: selectedAlbum,
+          mediaType: MediaLibrary.MediaType.photo,
+          first: 40,
+        });
+        if (media !== null) {
+          const assets = media.assets;
+          //update assets metadata
+          assets.map((newAsset) => {
+            assetsToMove.map(async (asset) => {
+              if (asset.filename === newAsset.filename) {
+                await updateId(newAsset.id, asset.filename);
+              }
+            });
+          });
+        }
         setOpenForm(false);
         setIsAssetMove(false);
         await AsyncStorage.removeItem("assetsTo");
@@ -196,6 +203,12 @@ const Folders = (props: Props) => {
   const setFolderName = (text: string) => {
     setName(text);
   };
+  console.log("before", { isAssetMove });
+
+  console.log({ loading });
+  if (loading) return <ActivityIndicator />;
+  console.log("after", { isAssetMove });
+
   return (
     <View style={styles.container}>
       <Modal
