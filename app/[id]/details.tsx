@@ -15,7 +15,6 @@ import * as MediaLibrary from "expo-media-library";
 import PhotoHeader from "@/components/PhotoHeader";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import AnimatedImage from "@/components/AnimatedImage";
 import { readData } from "@/db/SQLiteFunctions";
 
 export default function PhotoScreen() {
