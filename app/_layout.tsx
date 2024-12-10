@@ -4,6 +4,8 @@ export default function Root() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="folders/[folder]" options={{ headerShown: true }} />
+
       <Stack.Screen
         name="[id]/details"
         options={{

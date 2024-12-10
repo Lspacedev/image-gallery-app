@@ -25,6 +25,9 @@ import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useIsFocused } from "@react-navigation/native";
 import * as MediaLibrary from "expo-media-library";
 import PhotoCard from "@/components/PhotoCard";
+import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const Photos = () => {
   const [storagePermission, requestStoragePermission] =
     MediaLibrary.usePermissions();
@@ -33,11 +36,42 @@ const Photos = () => {
   const [loading, setLoading] = useState(false);
   const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.AssetRef[]>([]);
   const [openMenu, setOpenMenu] = useState(false);
-  const [openForm, setOpenForm] = useState(false);
   const [show, setShow] = useState(false);
 
   const [name, setName] = useState("");
+  const storeData = async (key: string, value: any) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (e) {
+      // saving error
+    }
+  };
+  useEffect(() => {
+    getData();
+  }, []);
+  useEffect(() => {
+    (async () => {
+      let assets: MediaLibrary.Asset[] =
+        assetsToMove.map((id) => {
+          const [asset] = photos.filter((photo) => photo.id === id);
+          return asset;
+        }) || [];
 
+      await storeData("assetsTo", JSON.stringify(assets));
+    })();
+  }, [assetsToMove]);
+  const getData = async () => {
+    try {
+      const data = await AsyncStorage.getItem("assetsTo");
+      console.log("index", { data });
+      if (data === null) {
+        setAssetsToMove([]);
+        //setShow(false);
+      }
+    } catch (error) {
+      console.error("Error fetching data", error);
+    }
+  };
   // useEffect(() => {
   //   console.log(storagePermission);
   //   (async () => {
@@ -69,7 +103,6 @@ const Photos = () => {
       await requestStoragePermission();
     } else {
       let a = await MediaLibrary.getAlbumsAsync();
-      console.log({ a });
       let album = await MediaLibrary.getAlbumAsync("Image Gallery");
       if (album !== null) {
         const media = await MediaLibrary.getAssetsAsync({
@@ -98,34 +131,9 @@ const Photos = () => {
       setAssetsToMove((prev) => [...prev, assetId]);
     }
   };
-  const moveAssets = async () => {
-    let assets: MediaLibrary.Asset[] =
-      assetsToMove.map((id) => {
-        const [asset] = photos.filter((photo) => photo.id === id);
-        return asset;
-      }) || [];
-    const album = await MediaLibrary.getAlbumAsync(name);
-    if (album == null && assets.length > 0) {
-      const asset = await MediaLibrary.createAssetAsync(assets[0].uri);
 
-      const create = await MediaLibrary.createAlbumAsync(name, asset, false);
-      //move the rest of the images
-      const newAlbum = await MediaLibrary.getAlbumAsync(name);
-
-      const moved = await MediaLibrary.addAssetsToAlbumAsync(
-        assets.slice(1),
-        newAlbum,
-        false
-      );
-      setOpenForm(false);
-    } else {
-      const moved = await MediaLibrary.addAssetsToAlbumAsync(
-        assets,
-        album,
-        false
-      );
-      setOpenForm(false);
-    }
+  const goToFolders = () => {
+    router.push("/(tabs)/folders");
   };
   if (loading) return <ActivityIndicator />;
   return (
@@ -164,7 +172,8 @@ const Photos = () => {
                   style={styles.menuItem}
                   onPress={() => {
                     setOpenMenu(false);
-                    setOpenForm(true);
+
+                    goToFolders();
                   }}
                 >
                   <Text>Move to folder</Text>
@@ -174,39 +183,8 @@ const Photos = () => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-      {/* <Modal
-        animationType="slide"
-        transparent={true}
-        visible={openForm}
-        onRequestClose={() => {
-          setOpenForm(false);
-        }}
-        style={styles.menuModal}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setOpenForm(false);
-          }}
-        >
-          <View style={{ backgroundColor: "transparent", flex: 1 }}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.folderName}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter folder name"
-                  placeholderTextColor={"#717171"}
-                  onChangeText={(text) => setName(text)}
-                />
 
-                <Pressable style={styles.button} onPress={() => moveAssets()}>
-                  <Text style={styles.buttonText}>Submit</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal> */}
-      {/* {show && (
+      {show && (
         <Pressable
           style={styles.options}
           onPress={() => {
@@ -224,7 +202,7 @@ const Photos = () => {
             }}
           />
         </Pressable>
-      )} */}
+      )}
       {photos.length > 0 ? (
         <FlatList
           contentContainerStyle={{ padding: 0 }}

@@ -22,6 +22,7 @@ export default function PhotoScreen() {
   const [metaData, setMetaData] = useState<any>({});
 
   useEffect(() => {
+    console.log("details", { id });
     getMetaData();
   }, [id]);
   const getMetaData = async () => {

@@ -20,12 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.lspacedev.imagegalleryapp",
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
-        }
-      }
+      "package": "com.lspacedev.imagegalleryapp"
     },
 
     "web": {

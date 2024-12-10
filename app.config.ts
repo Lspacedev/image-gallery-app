@@ -8,6 +8,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   slug: "image-gallery-app",
   name: "image-gallery-app",
+  ios: {
+    supportsTablet: true,
+  },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",

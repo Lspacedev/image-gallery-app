@@ -1,14 +1,10 @@
 import { useLocalSearchParams, Link, router } from "expo-router";
 import {
   View,
-  ScrollView,
-  Text,
   StyleSheet,
-  Pressable,
-  Image,
-  Modal,
-  TouchableWithoutFeedback,
   ActivityIndicator,
+  FlatList,
+  Text,
 } from "react-native";
 
 import { useState, useEffect } from "react";
@@ -16,61 +12,68 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import * as MediaLibrary from "expo-media-library";
 import PhotoHeader from "@/components/PhotoHeader";
-
+import FolderPhotoCard from "@/components/FolderPhotoCard";
 import AnimatedImage from "@/components/AnimatedImage";
 
-export default function PhotoScreen() {
-  const { folder, id } = useLocalSearchParams();
-  const [photo, setPhoto] = useState<MediaLibrary.Asset>();
-  const [openMenu, setOpenMenu] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function FolderScreen() {
+  const { folder } = useLocalSearchParams();
+  const [storagePermission, requestStoragePermission] =
+    MediaLibrary.usePermissions();
+  const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
 
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
-    console.log({ folder, id }, typeof folder !== "undefined");
-    if (typeof folder !== "undefined") {
-      getPhoto(folder as string);
-    } else {
-      getPhoto("Image Gallery");
+    console.log({ folder });
+    getPhotos();
+  }, [folder]);
+  const getPhotos = async () => {
+    setLoading(true);
+    if (storagePermission?.status !== "granted") {
+      await requestStoragePermission();
     }
-  }, [folder, id]);
-  const getPhoto = async (folderName: string) => {
-    console.log({ folderName });
-    let album = await MediaLibrary.getAlbumAsync(folderName);
-
+    let album = await MediaLibrary.getAlbumAsync(folder as string);
     if (album !== null) {
       const media = await MediaLibrary.getAssetsAsync({
         album: album,
         mediaType: MediaLibrary.MediaType.photo,
         first: 40,
       });
-      console.log(media);
       if (media !== null) {
         const assets = media.assets;
-        const [asset] = assets.filter((photo) => photo.id === id);
-        console.log({ asset });
-        setPhoto(asset);
-        setLoading(false);
-      } else {
+        setPhotos(assets);
         setLoading(false);
       }
+    } else {
+      setPhotos([]);
+      setLoading(false);
     }
   };
   if (loading) return <ActivityIndicator />;
-  console.log({ photo });
-
+  console.log("folder", { photos });
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ flexGrow: 1 }}
-    >
-      <PhotoHeader assetId={photo?.id ?? ""} albumId={photo?.albumId ?? ""} />
-      <AnimatedImage uri={photo?.uri} />
-    </ScrollView>
+    <View style={styles.container}>
+      {photos.length > 0 ? (
+        <FlatList
+          contentContainerStyle={{ padding: 0 }}
+          data={photos}
+          numColumns={3}
+          columnWrapperStyle={{ gap: 2, marginVertical: 2 }}
+          renderItem={({ item }) => {
+            return <FolderPhotoCard photo={item} folder={folder as string} />;
+          }}
+        />
+      ) : (
+        <View style={{ flex: 1 }}>
+          <Text style={{ flex: 1, color: "white" }}>No photos in folder</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: "black",
   },
   nav: {

@@ -30,10 +30,28 @@ export default function App() {
   const cameraRef = useRef<CameraView>(null);
   const [pictureSizes, setPictureSizes] = useState<string[]>([]);
   const [selectedSize, setSelectedSize] = useState(undefined);
+  const [location, setLocation] = useState<Location.LocationObject>();
+
   useEffect(() => {
     (async () => {
       await initialiseDb();
     })();
+    async function getCurrentLocation() {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Low,
+      });
+
+      console.log({ location });
+      setLocation(location);
+    }
+
+    getCurrentLocation();
   }, []);
   useEffect(() => {
     async function getSizes() {
@@ -80,27 +98,50 @@ export default function App() {
         if (storagePermission?.status !== "granted") {
           await requestStoragePermission();
         }
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert("Permission to access location was denied");
-          return;
-        }
 
-        let location = await Location.getCurrentPositionAsync({});
+        // let { status } = await Location.requestForegroundPermissionsAsync();
+        // if (status !== "granted") {
+        //   Alert.alert("Permission to access location was denied");
+        //   return;
+        // }
+
+        // let location = await Location.getCurrentPositionAsync({});
         if (storagePermission?.status === "granted") {
           const asset = await MediaLibrary.createAssetAsync(photo!.uri);
           const album = await MediaLibrary.getAlbumAsync("Image Gallery");
-          if (album == null) {
+          console.log({ album });
+          if (album === null) {
+            console.log({
+              lat: location!.coords.latitude,
+              long: location!.coords.longitude,
+            });
             const image = await MediaLibrary.createAlbumAsync(
               "Image Gallery",
               asset,
               false
             );
             //add metadata to sqlite db
+            const id = Number(asset.id) + 1;
             const filename = asset.filename;
             const timeStamp = Date.now();
             const uri = asset.uri;
+
+            const insertRes = await insertData(
+              id,
+              filename,
+              uri,
+              timeStamp,
+              location!.coords.latitude,
+              location!.coords.longitude
+            );
+
+            const read = await readData(asset.id);
+            console.log({ read });
           } else {
+            console.log({
+              lat: location!.coords.latitude,
+              long: location!.coords.longitude,
+            });
             const image = await MediaLibrary.addAssetsToAlbumAsync(
               [asset],
               album,
@@ -111,21 +152,14 @@ export default function App() {
             const filename = asset.filename;
             const timeStamp = Date.now();
             const uri = asset.uri;
-            console.log({
-              id,
-              filename,
-              uri,
-              timeStamp,
-              lat: location.coords.latitude,
-              long: location.coords.longitude,
-            });
+
             const insertRes = await insertData(
               id,
               filename,
               uri,
               timeStamp,
-              location.coords.latitude,
-              location.coords.longitude
+              location!.coords.latitude,
+              location!.coords.longitude
             );
 
             const read = await readData(asset.id);
