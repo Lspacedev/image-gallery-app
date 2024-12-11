@@ -4,7 +4,12 @@ import Feather from "@expo/vector-icons/Feather";
 import IndexHeader from "@/components/IndexHeader";
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarActiveBackgroundColor: "black",
+        tabBarInactiveBackgroundColor: "#333333",
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -13,7 +18,7 @@ export default function TabLayout() {
           },
           tabBarLabel: "",
           tabBarIcon: ({ color }) => {
-            return <FontAwesome name="photo" size={24} color="black" />;
+            return <FontAwesome name="photo" size={24} color="white" />;
           },
         }}
       />
@@ -26,7 +31,7 @@ export default function TabLayout() {
           tabBarLabel: "",
 
           tabBarIcon: ({ color }) => {
-            return <Feather name="folder" size={24} color="black" />;
+            return <Feather name="folder" size={24} color="white" />;
           },
         }}
       />

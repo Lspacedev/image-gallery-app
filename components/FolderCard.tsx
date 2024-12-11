@@ -79,11 +79,11 @@ const styles = StyleSheet.create({
   icon: {
     flex: 1,
     fontSize: 100,
-    color: "grey",
+    color: "white",
   },
   text: {
     flex: 1,
-    color: "black",
+    color: "white",
     fontSize: 18,
   },
 });
