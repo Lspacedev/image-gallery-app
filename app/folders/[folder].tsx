@@ -1,55 +1,50 @@
-import { useLocalSearchParams, Link, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import {
   View,
   StyleSheet,
   ActivityIndicator,
   FlatList,
   Text,
+  Image,
+  Dimensions,
 } from "react-native";
 
 import { useState, useEffect } from "react";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import EvilIcons from "@expo/vector-icons/EvilIcons";
-import * as MediaLibrary from "expo-media-library";
-import PhotoHeader from "@/components/PhotoHeader";
-import FolderPhotoCard from "@/components/FolderPhotoCard";
-import AnimatedImage from "@/components/AnimatedImage";
 
+import FolderPhotoCard from "@/components/FolderPhotoCard";
+import RNFS from "react-native-fs";
+type ItemType = {
+  name: string;
+  path: string;
+};
 export default function FolderScreen() {
   const { folder } = useLocalSearchParams();
-  const [storagePermission, requestStoragePermission] =
-    MediaLibrary.usePermissions();
-  const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
+
+  const [photos, setPhotos] = useState<ItemType[]>([]);
 
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    console.log({ folder });
     getPhotos();
   }, [folder]);
   const getPhotos = async () => {
     setLoading(true);
-    if (storagePermission?.status !== "granted") {
-      await requestStoragePermission();
-    }
-    let album = await MediaLibrary.getAlbumAsync(folder as string);
-    if (album !== null) {
-      const media = await MediaLibrary.getAssetsAsync({
-        album: album,
-        mediaType: MediaLibrary.MediaType.photo,
-        first: 40,
+    const directoryPath =
+      RNFS.PicturesDirectoryPath + "/Image Gallery/" + folder;
+    const result = await RNFS.readDir(directoryPath);
+
+    const paths = result
+      .filter((item) => item.isFile())
+      .map((item) => {
+        console.log({ item });
+        return {
+          name: item.name.substring(0, item.name.indexOf(".")),
+          path: item.path,
+        };
       });
-      if (media !== null) {
-        const assets = media.assets;
-        setPhotos(assets);
-        setLoading(false);
-      }
-    } else {
-      setPhotos([]);
-      setLoading(false);
-    }
+    setPhotos(paths);
+    setLoading(false);
   };
   if (loading) return <ActivityIndicator />;
-  console.log("folder", { photos });
   return (
     <View style={styles.container}>
       {photos.length > 0 ? (
@@ -63,8 +58,23 @@ export default function FolderScreen() {
           }}
         />
       ) : (
-        <View style={{ flex: 1 }}>
-          <Text style={{ flex: 1, color: "white" }}>No photos in folder</Text>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Image
+            resizeMode="center"
+            style={{ height: 100 }}
+            source={require("@/assets/images/unboxing_11746107.png")}
+          />
+          <Text
+            style={{
+              textAlign: "center",
+              color: "white",
+              alignItems: "center",
+            }}
+          >
+            No photos in folder
+          </Text>
         </View>
       )}
     </View>
@@ -93,7 +103,10 @@ const styles = StyleSheet.create({
   arrowText: {
     color: "whitesmoke",
   },
-  imgContainer: {},
+  imgContainer: {
+    width: Dimensions.get("window").width / 3,
+    height: Dimensions.get("window").width / 3,
+  },
   img: { flex: 1 },
   details: {
     marginTop: -30,

@@ -1,44 +1,37 @@
-import { useState, useEffect } from "react";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
-
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   FlatList,
-  Button,
-  TouchableOpacity,
   Text,
   Pressable,
   StyleSheet,
   ActivityIndicator,
-  Alert,
-  SafeAreaView,
-  StatusBar,
   Modal,
   TouchableWithoutFeedback,
-  Dimensions,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 
 import { useIsFocused } from "@react-navigation/native";
-import * as MediaLibrary from "expo-media-library";
 import PhotoCard from "@/components/PhotoCard";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import RNFS from "react-native-fs";
 
+type PhotoType = {
+  id: string;
+  uri: string;
+};
 const Photos = () => {
-  const [storagePermission, requestStoragePermission] =
-    MediaLibrary.usePermissions();
-  const [photos, setPhotos] = useState<MediaLibrary.Asset[]>([]);
+  const [photos, setPhotos] = useState<PhotoType[]>([]);
   const isFocused = useIsFocused();
-  const [loading, setLoading] = useState(false);
-  const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.AssetRef[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assetsToMove, setAssetsToMove] = useState<string[]>([]);
   const [openMenu, setOpenMenu] = useState(false);
   const [show, setShow] = useState(false);
   const [selector, setSelector] = useState(false);
 
-  const [name, setName] = useState("");
   const storeData = async (key: string, value: any) => {
     try {
       await AsyncStorage.setItem(key, value);
@@ -46,13 +39,18 @@ const Photos = () => {
       // saving error
     }
   };
-  useEffect(() => {
-    isFocused && getData();
-  }, [isFocused]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getData();
+      getPhotos();
+    }, [])
+  );
+
   useEffect(() => {
     (async () => {
       if (assetsToMove.length > 0) {
-        let assets: MediaLibrary.Asset[] =
+        let assets: PhotoType[] =
           assetsToMove.map((id) => {
             const [asset] = photos.filter((photo) => photo.id === id);
             return asset;
@@ -60,8 +58,6 @@ const Photos = () => {
 
         await storeData("assetsTo", JSON.stringify(assets));
       } else {
-        console.log("stop now");
-
         await storeData("assetsTo", JSON.stringify([]));
         setSelector(false);
       }
@@ -70,33 +66,14 @@ const Photos = () => {
   const getData = async () => {
     try {
       const data = await AsyncStorage.getItem("assetsTo");
-      console.log("index", { data });
       if (data === null || JSON.parse(data).length === 0) {
         setAssetsToMove([]);
-        //setShow(false);
       }
     } catch (error) {
       console.error("Error fetching data", error);
     }
   };
-  // useEffect(() => {
-  //   console.log(storagePermission);
-  //   (async () => {
-  //     if (storagePermission?.status !== "granted") {
-  //       await requestStoragePermission();
-  //     }
-  //   })();
-  // }, [storagePermission]);
-  // useEffect(() => {
-  //   console.log(
-  //     "ddd",
-  //     storagePermission && storagePermission.status === "granted"
-  //   );
-  //   getPhotos();
-  // }, []);
-  useEffect(() => {
-    isFocused && getPhotos();
-  }, [isFocused, storagePermission]);
+
   useEffect(() => {
     if (assetsToMove.length > 0) {
       setShow(true);
@@ -106,26 +83,25 @@ const Photos = () => {
   }, [assetsToMove]);
   const getPhotos = async () => {
     setLoading(true);
-    if (storagePermission?.status !== "granted") {
-      await requestStoragePermission();
-    } else {
-      let a = await MediaLibrary.getAlbumsAsync();
-      let album = await MediaLibrary.getAlbumAsync("Image Gallery");
-      if (album !== null) {
-        const media = await MediaLibrary.getAssetsAsync({
-          album: album,
-          mediaType: MediaLibrary.MediaType.photo,
-          first: 40,
-        });
-        if (media !== null) {
-          const assets = media.assets;
-          setPhotos(assets);
-          setLoading(false);
-        }
-      } else {
-        setPhotos([]);
-        setLoading(false);
+    try {
+      const directoryPath = RNFS.PicturesDirectoryPath + "/Image Gallery";
+      const exists = await RNFS.exists(directoryPath);
+      if (exists) {
+        const result = await RNFS.readDir(directoryPath);
+        const paths = result
+          .filter((item) => item.isFile())
+          .map((item) => {
+            console.log({ item });
+            return {
+              id: item.name.substring(0, item.name.indexOf(".")),
+              uri: "file://" + item.path,
+            };
+          });
+        setPhotos(paths);
       }
+      setLoading(false);
+    } catch (error) {
+      console.log("Error", error);
     }
   };
   const addAssetsToMove = (assetId: string) => {
@@ -143,7 +119,13 @@ const Photos = () => {
   const goToFolders = () => {
     router.push("/(tabs)/folders");
   };
-  if (loading) return <ActivityIndicator />;
+  if (loading)
+    return (
+      <ActivityIndicator
+        color="white"
+        style={{ flex: 1, backgroundColor: "black" }}
+      />
+    );
   return (
     <View style={styles.container}>
       <Modal
@@ -193,24 +175,22 @@ const Photos = () => {
       </Modal>
 
       {show && (
-        <View style={styles.options}>
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={() => {
-              setOpenMenu(true);
+        <Pressable
+          style={styles.options}
+          onPress={() => {
+            setOpenMenu(true);
+          }}
+        >
+          <SimpleLineIcons
+            name="options-vertical"
+            size={24}
+            style={{
+              color: "whitesmoke",
+              padding: 5,
+              borderRadius: 50,
             }}
-          >
-            <SimpleLineIcons
-              name="options-vertical"
-              size={24}
-              style={{
-                color: "whitesmoke",
-                padding: 5,
-                borderRadius: 50,
-              }}
-            />
-          </Pressable>
-        </View>
+          />
+        </Pressable>
       )}
 
       {photos.length > 0 ? (
@@ -232,11 +212,20 @@ const Photos = () => {
           }}
         />
       ) : (
-        <Text
-          style={{ textAlign: "center", color: "white", alignItems: "center" }}
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          Gallery is empty
-        </Text>
+          <MaterialIcons name="insert-photo" size={140} color="grey" />
+          <Text
+            style={{
+              textAlign: "center",
+              color: "white",
+              alignItems: "center",
+            }}
+          >
+            Gallery is empty
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -245,7 +234,7 @@ const Photos = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: "#1D1C1C",
     padding: 5,
   },
   menuModal: {
@@ -274,7 +263,14 @@ const styles = StyleSheet.create({
   },
   options: {
     height: 50,
-    backgroundColor: "grey",
+    width: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FF5A5F",
+    position: "absolute",
+    bottom: 10,
+    right: 30,
     zIndex: 1,
   },
   folderName: {

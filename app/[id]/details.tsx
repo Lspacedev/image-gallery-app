@@ -1,18 +1,14 @@
-import { useLocalSearchParams, Link, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import {
   View,
   ScrollView,
   Text,
+  ActivityIndicator,
   StyleSheet,
-  Pressable,
-  Image,
-  Modal,
-  TouchableWithoutFeedback,
 } from "react-native";
 
 import { useState, useEffect } from "react";
-import * as MediaLibrary from "expo-media-library";
-import PhotoHeader from "@/components/PhotoHeader";
+
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { readData } from "@/db/SQLiteFunctions";
@@ -20,34 +16,41 @@ import { readData } from "@/db/SQLiteFunctions";
 export default function PhotoScreen() {
   const { id } = useLocalSearchParams();
   const [metaData, setMetaData] = useState<any>({});
-
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
-    console.log("details", { id });
     getMetaData();
   }, [id]);
   const getMetaData = async () => {
+    setLoading(true);
     const data = await readData(id);
     setMetaData(data[0]);
+    setLoading(false);
   };
-  console.log({ metaData });
-  const date = new Date(metaData.timestamp * 1000) ?? "";
+  if (loading)
+    return (
+      <ActivityIndicator
+        color="white"
+        style={{ flex: 1, backgroundColor: "#1D1C1C" }}
+      />
+    );
+  const date = new Date(metaData!.timestamp * 1000) ?? "";
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
     >
       <View style={styles.view}>
-        <AntDesign name="file1" size={24} color="black" />
+        <AntDesign name="file1" size={24} color="white" />
 
         <Text style={styles.text}>{metaData.filename}</Text>
       </View>
 
       <View style={styles.view}>
-        <Feather name="calendar" size={24} color="black" />
+        <Feather name="calendar" size={24} color="white" />
         <Text style={styles.text}>{date.toString()}</Text>
       </View>
       <View style={styles.view}>
-        <Feather name="folder" size={24} color="black" />
+        <Feather name="folder" size={24} color="white" />
         <Text style={styles.text}>{metaData.uri}</Text>
       </View>
     </ScrollView>
@@ -56,7 +59,7 @@ export default function PhotoScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "grey",
+    backgroundColor: "#1D1C1C",
     paddingHorizontal: 25,
     paddingVertical: 25,
   },

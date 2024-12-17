@@ -1,32 +1,20 @@
-import { useLocalSearchParams, Link, router } from "expo-router";
-import {
-  View,
-  ScrollView,
-  Text,
-  StyleSheet,
-  Pressable,
-  Image,
-  Modal,
-  TouchableWithoutFeedback,
-  ActivityIndicator,
-} from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 
 import { useState, useEffect } from "react";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import EvilIcons from "@expo/vector-icons/EvilIcons";
+
 import * as MediaLibrary from "expo-media-library";
 import PhotoHeader from "@/components/PhotoHeader";
 
 import AnimatedImage from "@/components/AnimatedImage";
+import RNFS from "react-native-fs";
 
 export default function PhotoScreen() {
   const { folder, id } = useLocalSearchParams();
-  const [photo, setPhoto] = useState<MediaLibrary.Asset>();
-  const [openMenu, setOpenMenu] = useState(false);
+  const [photo, setPhoto] = useState<MediaLibrary.Asset | string>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log({ folder, id }, typeof folder !== "undefined");
     if (typeof folder !== "undefined") {
       getPhoto(folder as string);
     } else {
@@ -34,37 +22,39 @@ export default function PhotoScreen() {
     }
   }, [folder, id]);
   const getPhoto = async (folderName: string) => {
-    console.log({ folderName });
-    let album = await MediaLibrary.getAlbumAsync(folderName);
+    if (folderName === "Image Gallery") {
+      const directoryPath =
+        "file://" +
+        RNFS.PicturesDirectoryPath +
+        "/Image Gallery/" +
+        id +
+        ".jpg";
 
-    if (album !== null) {
-      const media = await MediaLibrary.getAssetsAsync({
-        album: album,
-        mediaType: MediaLibrary.MediaType.photo,
-        first: 40,
-      });
-      console.log(media);
-      if (media !== null) {
-        const assets = media.assets;
-        const [asset] = assets.filter((photo) => photo.id === id);
-        console.log({ asset });
-        setPhoto(asset);
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
+      setPhoto(directoryPath);
+      setLoading(false);
+    } else {
+      const directoryPath =
+        "file://" +
+        RNFS.PicturesDirectoryPath +
+        "/Image Gallery/" +
+        folder +
+        "/" +
+        id +
+        ".jpg";
+
+      setPhoto(directoryPath);
+      setLoading(false);
     }
   };
   if (loading) return <ActivityIndicator />;
-  console.log({ photo });
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
     >
-      <PhotoHeader assetId={photo?.id ?? ""} albumId={photo?.albumId ?? ""} />
-      <AnimatedImage uri={photo?.uri} />
+      <PhotoHeader folder={folder} assetId={id} albumId={folder} />
+      <AnimatedImage uri={photo} />
     </ScrollView>
   );
 }

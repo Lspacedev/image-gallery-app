@@ -24,6 +24,8 @@ npm run dev
 ## Credits:
 
 ```python
+<a href="https://www.freepik.com/icon/unboxing_11746107">Icon by Iconjam</a>
+<a href="https://www.freepik.com/icon/box_1007913">Icon by Freepik</a>
 
 ```
 

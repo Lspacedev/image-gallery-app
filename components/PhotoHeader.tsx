@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import React from "react";
-
 import Feather from "@expo/vector-icons/Feather";
-
 import {
   View,
   Pressable,
@@ -10,29 +8,69 @@ import {
   Text,
   StyleSheet,
   StatusBar,
-  Image,
   Modal,
   TouchableWithoutFeedback,
+  TouchableOpacity,
 } from "react-native";
 import { Link, router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import * as MediaLibrary from "expo-media-library";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import RNFS from "react-native-fs";
 
 type Props = {
-  assetId: string;
-  albumId: string;
+  folder: any;
+  assetId: any;
+  albumId: any;
 };
-const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
+const PhotoHeader: React.FC<Props> = ({ folder, assetId, albumId }) => {
   const [openMenu, setOpenMenu] = useState(false);
-
   const goToBack = () => {
     router.back();
   };
   const deletePhoto = async () => {
-    await MediaLibrary.removeAssetsFromAlbumAsync(assetId, albumId);
+    if (typeof folder === "undefined") {
+      const directoryPath =
+        RNFS.PicturesDirectoryPath + "/Image Gallery/" + assetId + ".jpg";
+      RNFS.unlink(directoryPath)
+        .then(() => {
+          console.log("deleted");
+          RNFS.scanFile(directoryPath)
+            .then(() => {
+              console.log("scanned");
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    } else {
+      const directoryPath =
+        RNFS.PicturesDirectoryPath +
+        "/Image Gallery/" +
+        folder +
+        "/" +
+        assetId +
+        ".jpg";
+      RNFS.unlink(directoryPath)
+        .then(() => {
+          console.log("deleted");
+          RNFS.scanFile(directoryPath)
+            .then(() => {
+              console.log("scanned");
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
     setOpenMenu(false);
     router.push("/");
   };
@@ -69,21 +107,26 @@ const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
                   <EvilIcons name="close" size={24} color="black" />
                 </Text>
 
-                <Pressable
+                <TouchableOpacity
                   style={styles.menuItem}
                   onPress={() => deletePhoto()}
                 >
                   <MaterialIcons name="delete" size={24} />
                   <Text>Delete</Text>
-                </Pressable>
-                <Link
-                  href={{
-                    pathname: "/[id]/details",
-                    params: { id: assetId },
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setOpenMenu(false);
+                    router.push({
+                      pathname: "/[id]/details",
+                      params: { id: assetId },
+                    });
                   }}
+                  style={styles.menuItem}
                 >
-                  <Text>Details</Text>
-                </Link>
+                  <FontAwesome name="file-text-o" size={24} />
+                  <Text> Details</Text>
+                </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -95,9 +138,10 @@ const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
       <Link href={{ pathname: "../[id]/map", params: { id: assetId } }}>
         <Feather name="map-pin" size={24} color="white" />
       </Link>
-      <Pressable
+      <TouchableOpacity
         style={styles.options}
-        onPress={() => {
+        onPressIn={() => {
+          console.log({ openMenu });
           setOpenMenu(true);
         }}
       >
@@ -111,7 +155,7 @@ const PhotoHeader: React.FC<Props> = ({ assetId, albumId }) => {
             borderRadius: 50,
           }}
         />
-      </Pressable>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -136,7 +180,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     width: 200,
-    height: 100,
+    height: 130,
     backgroundColor: "white",
     borderRadius: 5,
     padding: 10,
@@ -149,10 +193,12 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    gap: 15,
+    gap: 5,
     alignItems: "center",
-    padding: 5,
+    paddingVertical: 10,
   },
-  options: {},
+  options: {
+    zIndex: 1,
+  },
 });
 export default PhotoHeader;

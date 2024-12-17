@@ -13,7 +13,7 @@ type AnimatedImageProps = {
   uri: any;
 };
 const AnimatedImage: React.FC<AnimatedImageProps> = ({ uri }) => {
-  console.log;
+  console.log({ uri });
   const [panEnabled, setPanEnabled] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;

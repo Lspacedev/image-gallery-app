@@ -11,11 +11,14 @@ import {
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as MediaLibrary from "expo-media-library";
-
+type PhotoType = {
+  id: string;
+  uri: string;
+};
 type PhotoProps = {
-  photo: MediaLibrary.Asset;
+  photo: PhotoType;
   addAssetsToMove: (assetId: string) => void;
-  selected: MediaLibrary.AssetRef[];
+  selected: string[];
   selector: boolean;
   setSelector: (bool: boolean) => void;
 };

@@ -1,34 +1,27 @@
 import { useState, useEffect } from "react";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 
 import {
-  ScrollView,
-  Button,
-  TouchableOpacity,
   Text,
   Pressable,
   StyleSheet,
-  NativeSyntheticEvent,
-  TextInputChangeEventData,
   View,
   FlatList,
   ActivityIndicator,
-  Alert,
-  SafeAreaView,
-  StatusBar,
   Image,
   Modal,
   TouchableWithoutFeedback,
   TextInput,
+  Alert,
 } from "react-native";
 import * as MediaLibrary from "expo-media-library";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-//import * as FileSystem from "expo-file-system";
-import FileSystem from "expo-file-system";
 import RNFS from "react-native-fs";
 import FolderCard from "@/components/FolderCard";
-import { updateId } from "@/db/SQLiteFunctions";
+import { updateUri } from "@/db/SQLiteFunctions";
 import { useIsFocused } from "@react-navigation/native";
+import FAB from "@/components/FAB";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 
 type Props = {};
 type folderType = {
@@ -36,59 +29,46 @@ type folderType = {
   size: number;
 };
 const Folders = (props: Props) => {
-  //   const [name, setName] = useState<InputType>("");
-  const [album, setAlbum] = useState<MediaLibrary.Album>();
   const [folders, setFolders] = useState<folderType[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [name, setName] = useState("");
   const [assetsToMove, setAssetsToMove] = useState<MediaLibrary.Asset[]>([]);
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const isFocused = useIsFocused();
   const [isAssetMove, setIsAssetMove] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      getData();
+      getAlbums();
+    }, [])
+  );
 
   useEffect(() => {
-    isFocused && getData();
-    //getAlbum();
-    getAlbums();
-  }, [isFocused]);
+    checkMove();
+  }, [assetsToMove, folders]);
   const getData = async () => {
+    setLoading(true);
     try {
       const data = await AsyncStorage.getItem("assetsTo");
-      console.log({ data });
       if (data !== null) {
         const arr = JSON.parse(data);
         setAssetsToMove(arr);
-        console.log({ arr });
         if (arr.length === 0) {
-          console.log("empty");
           setIsAssetMove(false);
           setLoading(false);
         } else {
-          console.log("not empty");
-
           setIsAssetMove(true);
           setLoading(false);
         }
-        // return data;
       }
     } catch (error) {
       console.error("Error fetching data", error);
     }
   };
-  const getAlbum = async () => {
-    if (permissionResponse?.status !== "granted") {
-      await requestPermission();
-    }
-    const fetchedAlbum = await MediaLibrary.getAlbumAsync("Image Gallery");
-    setAlbum(fetchedAlbum);
-  };
+
   const getAlbums = async () => {
-    // if (permissionResponse?.status !== "granted") {
-    //   await requestPermission();
-    // }
-    // const fetchedAlbums = await MediaLibrary.getAlbumAsync("Image Gallery");
-    // console.log(fetchedAlbums);
+    setLoading(true);
     try {
       const directoryPath = RNFS.PicturesDirectoryPath + "/Image Gallery";
       const result = await RNFS.readDir(directoryPath);
@@ -99,116 +79,87 @@ const Folders = (props: Props) => {
           return { name: item.name, size: item.size };
         });
       setFolders(folderNames);
+      setLoading(false);
     } catch (err) {}
   };
-
+  const checkMove = async () => {
+    if (assetsToMove.length > 0 && folders.length === 0) {
+      Alert.alert("No folders created");
+      await AsyncStorage.removeItem("assetsTo");
+      router.push("/(tabs)/");
+    }
+  };
   const moveAssets = async (name: string) => {
     try {
-      //check if album
-      let selectedAlbum = await MediaLibrary.getAlbumAsync(name);
-      console.log({ selectedAlbum });
-      if (selectedAlbum === null && assetsToMove.length > 0) {
-        const asset = await MediaLibrary.createAssetAsync(assetsToMove[0].uri);
-        console.log({ asset });
-        const create = await MediaLibrary.createAlbumAsync(name, asset, false);
-        console.log({ create });
-        const moved = await MediaLibrary.addAssetsToAlbumAsync(
-          assetsToMove.slice(1),
-          create,
-          false
-        );
-        // console.log({ moved });
-        // const media = await MediaLibrary.getAssetsAsync({
-        //   album: create,
-        //   mediaType: MediaLibrary.MediaType.photo,
-        //   first: 40,
-        // });
-        // if (media !== null) {
-        //   const assets = media.assets;
-        //   //update assets metadata
-        //   assets.map(async (newAsset) => {
-        //     assetsToMove.map(async (asset) => {
-        //       if (asset.filename === newAsset.filename) {
-        //         console.log(asset.filename, newAsset.filename);
-        //         await updateId(asset.id, newAsset.id);
-        //       }
-        //     });
-        //   });
-        // }
+      const fromPath = RNFS.PicturesDirectoryPath + `/Image Gallery/`;
+      const destPath =
+        RNFS.PicturesDirectoryPath + `/Image Gallery/` + name + "/";
 
-        setOpenForm(false);
-        setIsAssetMove(false);
-        await AsyncStorage.removeItem("assetsTo");
-      }
-      if (selectedAlbum && assetsToMove.length > 0) {
-        console.log("second");
-        const moved = await MediaLibrary.addAssetsToAlbumAsync(
-          assetsToMove,
-          selectedAlbum,
-          false
-        );
-        const media = await MediaLibrary.getAssetsAsync({
-          album: selectedAlbum,
-          mediaType: MediaLibrary.MediaType.photo,
-          first: 40,
-        });
-        if (media !== null) {
-          const assets = media.assets;
-          //update assets metadata
-          assets.map((newAsset) => {
-            assetsToMove.map(async (asset) => {
-              if (asset.filename === newAsset.filename) {
-                await updateId(newAsset.id, asset.filename);
-              }
-            });
+      assetsToMove.map(async (asset) => {
+        const filename = asset?.uri.substring(asset?.uri.lastIndexOf("/") + 1);
+        RNFS.moveFile(fromPath + filename, destPath + filename)
+          .then(async () => {
+            RNFS.scanFile(fromPath + filename)
+              .then(() => {
+                console.log("scanned");
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+            const fileId = filename?.substring(0, filename.indexOf("."));
+
+            await updateUri(fileId, destPath + filename);
+          })
+
+          .catch((err) => {
+            console.log(err);
           });
-        }
-        setOpenForm(false);
-        setIsAssetMove(false);
-        await AsyncStorage.removeItem("assetsTo");
-      }
+      });
+      AsyncStorage.removeItem("assetsTo");
+      router.push("/(tabs)");
     } catch (err) {
       console.log(err);
     }
-    //   // const album = await MediaLibrary.getAlbumAsync(name);
-    //   // if (album == null && assets.length > 0) {
-    //   //   const asset = await MediaLibrary.createAssetAsync(assets[0].uri);
-
-    //   //   const create = await MediaLibrary.createAlbumAsync(name, asset, false);
-    //   //   //move the rest of the images
-    //   //   const newAlbum = await MediaLibrary.getAlbumAsync(name);
-
-    //   //   const moved = await MediaLibrary.addAssetsToAlbumAsync(
-    //   //     assets.slice(1),
-    //   //     newAlbum,
-    //   //     false
-    //   //   );
-    //   //   setOpenForm(false);
-    //   // } else {
-    //   //   const moved = await MediaLibrary.addAssetsToAlbumAsync(
-    //   //     assets,
-    //   //     album,
-    //   //     false
-    //   //   );
-    //   //   setOpenForm(false);
-    //   // }
   };
-
-  // const moveAssets = async (name: string) => {
-  //   console.log({ name });
-  //   setIsAssetMove(false);
-  //   await AsyncStorage.removeItem("assetsTo");
-  // };
-
-  const setFolderName = (text: string) => {
-    setName(text);
+  if (loading)
+    return (
+      <ActivityIndicator
+        color="white"
+        style={{ flex: 1, backgroundColor: "black" }}
+      />
+    );
+  const createFolder = async () => {
+    try {
+      const directoryPath = RNFS.PicturesDirectoryPath + "/Image Gallery";
+      const folderPath = `${directoryPath}/${name}`;
+      const folderExists = await RNFS.exists(folderPath);
+      if (!folderExists) {
+        RNFS.mkdir(folderPath)
+          .then(() => {
+            console.log("Folder created successfully");
+            setOpenForm(false);
+          })
+          .catch((error) => {
+            console.error("Error creating folder:", error);
+            setOpenForm(false);
+          });
+        console.log("Persisted folder created:", folderPath);
+      } else {
+        console.log("Persisted folder already exists:", folderPath);
+      }
+      getAlbums();
+      //router.push("/(tabs)/folders");
+    } catch (err) {
+      console.log("Error", err);
+    }
   };
-  console.log("before", { isAssetMove });
-
-  console.log({ loading });
-  if (loading) return <ActivityIndicator />;
-  console.log("after", { isAssetMove });
-
+  if (loading)
+    return (
+      <ActivityIndicator
+        color="white"
+        style={{ flex: 1, backgroundColor: "black" }}
+      />
+    );
   return (
     <View style={styles.container}>
       <Modal
@@ -225,7 +176,14 @@ const Folders = (props: Props) => {
             setOpenForm(false);
           }}
         >
-          <View style={{ backgroundColor: "transparent", flex: 1 }}>
+          <View
+            style={{
+              backgroundColor: "transparent",
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={styles.folderName}>
                 <TextInput
@@ -235,10 +193,7 @@ const Folders = (props: Props) => {
                   onChangeText={(text) => setName(text)}
                 />
 
-                <Pressable
-                  style={styles.button}
-                  onPress={() => moveAssets(name)}
-                >
+                <Pressable style={styles.button} onPress={() => createFolder()}>
                   <Text style={styles.buttonText}>Submit</Text>
                 </Pressable>
               </View>
@@ -246,19 +201,16 @@ const Folders = (props: Props) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-      <Pressable
-        onPress={() => {
-          setOpenForm(true);
-        }}
-      >
-        <Text>Create</Text>
-      </Pressable>
+
       {folders.length > 0 ? (
         <FlatList
-          contentContainerStyle={{ padding: 0 }}
+          contentContainerStyle={{ paddingHorizontal: 25 }}
           data={folders}
-          numColumns={3}
-          columnWrapperStyle={{ gap: 2, marginVertical: 2 }}
+          numColumns={2}
+          columnWrapperStyle={{
+            gap: 10,
+            marginVertical: 2,
+          }}
           renderItem={({ item }) => {
             return (
               <FolderCard
@@ -270,12 +222,26 @@ const Folders = (props: Props) => {
           }}
         />
       ) : (
-        <Text
-          style={{ textAlign: "center", color: "white", alignItems: "center" }}
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          No folders created
-        </Text>
+          <Image
+            resizeMode="center"
+            style={{ height: 100 }}
+            source={require("@/assets/images/box_1007913.png")}
+          />
+          <Text
+            style={{
+              textAlign: "center",
+              color: "white",
+              alignItems: "center",
+            }}
+          >
+            No folders created
+          </Text>
+        </View>
       )}
+      {!isAssetMove && <FAB openModal={setOpenForm} />}
     </View>
   );
 };
@@ -311,9 +277,9 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#0C0910",
-    padding: 5,
+    paddingVertical: 5,
     paddingHorizontal: 50,
-    width: "100%",
+    width: "90%",
     marginTop: 10,
     borderRadius: 5,
   },
@@ -324,17 +290,18 @@ const styles = StyleSheet.create({
   },
   options: {},
   folderName: {
-    backgroundColor: "blue",
-    width: 200,
-    height: 100,
+    backgroundColor: "white",
+    width: 300,
+    height: 200,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 6,
   },
   input: {
     borderRadius: 5,
     borderColor: "#BDBDBD",
     padding: 5,
-    width: "100%",
+    width: "90%",
     color: "#BDBDBD",
     borderWidth: 0.8,
   },

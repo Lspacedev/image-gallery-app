@@ -6,8 +6,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveBackgroundColor: "black",
-        tabBarInactiveBackgroundColor: "#333333",
+        tabBarActiveBackgroundColor: "#2A2828",
+        tabBarInactiveBackgroundColor: "#2A2828",
+        tabBarActiveTintColor: "whitesmoke",
+        tabBarStyle: {
+          borderTopWidth: 0.3,
+          borderTopColor: "black",
+          elevation: 1,
+          shadowColor: "#5bc4ff",
+          shadowOpacity: 1,
+          shadowOffset: {
+            height: 1,
+            width: 1,
+          },
+          shadowRadius: 1,
+        },
       }}
     >
       <Tabs.Screen
@@ -16,9 +29,22 @@ export default function TabLayout() {
           header: () => {
             return <IndexHeader />;
           },
-          tabBarLabel: "",
-          tabBarIcon: ({ color }) => {
-            return <FontAwesome name="photo" size={24} color="white" />;
+          tabBarLabel: "Photos",
+          tabBarLabelStyle: {
+            fontWeight: "600",
+            fontSize: 15,
+          },
+          tabBarItemStyle: { paddingTop: 5 }, //use This for Icon or image
+          tabBarActiveTintColor: "#B2CFE6",
+
+          tabBarIcon: ({ color, focused }) => {
+            return (
+              <FontAwesome
+                name="photo"
+                size={24}
+                color={focused ? "#B2CFE6" : "white"}
+              />
+            );
           },
         }}
       />
@@ -26,12 +52,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="folders"
         options={{
+          header: () => {
+            return <IndexHeader />;
+          },
           headerTitle: "Folders",
           headerStyle: {},
-          tabBarLabel: "",
-
-          tabBarIcon: ({ color }) => {
-            return <Feather name="folder" size={24} color="white" />;
+          tabBarLabel: "Folders",
+          tabBarLabelStyle: {
+            fontWeight: "600",
+            fontSize: 15,
+          },
+          tabBarActiveTintColor: "#B2CFE6",
+          tabBarIcon: ({ color, focused }) => {
+            return (
+              <Feather
+                name="folder"
+                size={24}
+                color={focused ? "#B2CFE6" : "white"}
+              />
+            );
           },
         }}
       />

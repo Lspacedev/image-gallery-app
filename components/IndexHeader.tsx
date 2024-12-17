@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from "react-native";
 import { router } from "expo-router";
+import Fontisto from "@expo/vector-icons/Fontisto";
 
 const IndexHeader = () => {
   const goToCamera = () => {
@@ -15,7 +16,10 @@ const IndexHeader = () => {
   };
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.text}>Gallery</Text>
+      <View style={{ flexDirection: "row" }}>
+        <Fontisto name="photograph" size={24} color="#C81D25" />
+        <Text style={styles.text}>Gallery</Text>
+      </View>
       <Pressable onPress={goToCamera}>
         <Feather name="camera" size={24} color="white" />
       </Pressable>
@@ -27,14 +31,16 @@ const styles = StyleSheet.create({
   container: {
     position: "relative",
     paddingTop: StatusBar.currentHeight,
-    height: 80,
+    height: 90,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "black",
+    backgroundColor: "#2A2828",
   },
   text: {
-    color: "white",
+    color: "#DAE2DF",
+    fontSize: 20,
+    fontWeight: "600",
   },
 });
 export default IndexHeader;
