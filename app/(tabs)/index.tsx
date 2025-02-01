@@ -98,6 +98,15 @@ const Photos = () => {
             };
           });
         setPhotos(paths);
+      } else {
+        RNFS.mkdir(directoryPath)
+          .then(() => {
+            console.log("Folder created successfully");
+          })
+          .catch((error) => {
+            console.error("Error creating folder:", error);
+          });
+        console.log("Persisted folder created:", directoryPath);
       }
       setLoading(false);
     } catch (error) {
